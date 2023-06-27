@@ -1,6 +1,6 @@
 __This crate is VERY MUCH a work in progress__ (Jun 2023)
 
-# Rumpunch
+# rumpunch
 
 [![CI check](https://github.com/neil2468/rumpunch/actions/workflows/check.yml/badge.svg)](https://github.com/neil2468/rumpunch/actions?query=branch%3Amain+workflow%3Acheck)
 [![CI test](https://github.com/neil2468/rumpunch/actions/workflows/test.yml/badge.svg)](https://github.com/neil2468/rumpunch/actions?query=branch%3Amain+workflow%3Atest)
