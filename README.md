@@ -1,4 +1,4 @@
-> :construction: This crate is a work in progress
+__This crate is VERY MUCH a work in progress__ (Jun 2023)
 
 # Rumpunch
 
