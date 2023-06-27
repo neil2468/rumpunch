@@ -2,8 +2,8 @@
 
 # Rumpunch
 
-[![CI check](https://github.com/neil2468/rumpunch/actions/workflows/check.yml/badge.svg)](https://github.com/neil2468/rumpunch/actions?query=branch%3Amain)
-[![CI check](https://github.com/neil2468/rumpunch/actions/workflows/test.yml/badge.svg)](https://github.com/neil2468/rumpunch/actions?query=branch%3Amain)
+[![CI check](https://github.com/neil2468/rumpunch/actions/workflows/check.yml/badge.svg)](https://github.com/neil2468/rumpunch/actions?query=branch%3Amain&workflow%3Acheck)
+[![CI test](https://github.com/neil2468/rumpunch/actions/workflows/test.yml/badge.svg)](https://github.com/neil2468/rumpunch/actions?query=branch%3Amain&workflow%3Atest)
 [![codecov](https://codecov.io/gh/neil2468/rumpunch/branch/main/graph/badge.svg?token=10ZIBJHJPH)](https://codecov.io/gh/neil2468/rumpunch)
 
 UDP multi-hole puncher for NAT traversal (including, sometimes, Symmetric NATs). 
