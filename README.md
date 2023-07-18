@@ -8,7 +8,7 @@ __This crate is VERY MUCH a work in progress__ (Jun 2023)
 
 UDP multi-hole puncher for NAT traversal (including, sometimes, Symmetric NATs). 
 
-Based on the work...
+Inspired by...
 
 > Wei, Yuan & Yamada, Daisuke & Yoshida, Suguru & Goto, Shigeki. (2008).  
 A New Method for Symmetric NAT Traversal in UDP and TCP.  

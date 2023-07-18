@@ -12,3 +12,10 @@ keywords = ["nat-traversal", "udp", "hole-punching", "symmetric-nat", "nat"]
 categories = ["network-programming"]
 
 [dependencies]
+postcard = { version = "1.0.4", features = ["alloc"] }
+rand = "0.8.5"
+serde = { version = "1.0.164", features = ["derive"] }
+thiserror = "1.0.43"
+
+[[example]]
+name = "foo"
