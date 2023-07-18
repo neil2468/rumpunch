@@ -39,10 +39,4 @@ impl Message {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test1() {
-        todo!(); // TODO
-    }
-}
+// TODO: add tests
