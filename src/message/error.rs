@@ -1,57 +1,56 @@
 use std::{
-    error::Error,
+    error,
     fmt::{self, Debug, Display, Formatter},
 };
-
-pub(crate) struct MessageError {
-    kind: MessageErrorKind,
+#[derive(Debug)]
+pub(crate) struct Error {
+    kind: ErrorKind,
+    source: Option<Box<dyn error::Error>>,
 }
 
-impl Display for MessageError {
+impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.kind)
     }
 }
 
-impl Error for MessageError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        use self::MessageErrorKind::*;
-        match &self.kind {
-            FromBytes(e) => Some(e),
-            ToBytes(e) => Some(e),
-        }
+impl error::Error for Error {
+    /// The lower-level source of this error, if any.
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        self.source.as_deref()
     }
 }
 
-impl Debug for MessageError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self)?;
-        if let Some(source) = self.source() {
-            writeln!(f, "Caused by:\n\t{}", source)?;
-        }
-        Ok(())
+impl Error {
+    pub(crate) fn new(kind: ErrorKind) -> Self {
+        Self { kind, source: None }
     }
-}
 
-impl From<MessageErrorKind> for MessageError {
-    fn from(kind: MessageErrorKind) -> Self {
-        Self { kind }
+    pub(crate) fn with_source(kind: ErrorKind, source: impl error::Error + 'static) -> Self {
+        Self {
+            kind,
+            source: Some(Box::new(source)),
+        }
+    }
+
+    pub(crate) fn kind(&self) -> &ErrorKind {
+        &self.kind
     }
 }
 
 #[non_exhaustive]
 #[derive(Debug)]
-pub(crate) enum MessageErrorKind {
-    FromBytes(postcard::Error),
-    ToBytes(postcard::Error),
+pub(crate) enum ErrorKind {
+    FromBytes,
+    ToBytes,
 }
 
-impl Display for MessageErrorKind {
+impl Display for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        use self::MessageErrorKind::*;
+        use self::ErrorKind::*;
         match &self {
-            FromBytes(_) => write!(f, "failed to deserialize message from bytes"),
-            ToBytes(_) => write!(f, "failed to serialize message to bytes"),
+            FromBytes => write!(f, "failed to deserialize message from bytes"),
+            ToBytes => write!(f, "failed to serialize message to bytes"),
         }
     }
 }
