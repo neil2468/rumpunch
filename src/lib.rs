@@ -47,13 +47,13 @@ pub fn dummy() {
     data_invalid[1] = 11;
     let message = Message::from_bytes(data_invalid.as_slice());
     match &message {
-        Ok(m) => println!("message {m:?}"),
+        Ok(m) => println!("message {:?}", m),
         Err(e) => {
             println!("DISPLAY...");
-            println!("error: {e}");
+            println!("error: {}", e);
             println!();
             println!("DEBUG...");
-            println!("error: {e:?}");
+            println!("error: {:?}", e);
             println!();
 
             match e {
