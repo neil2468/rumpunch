@@ -2,7 +2,8 @@
 
 mod message;
 
-use message::{ErrorKind, Message, PingReq, PingRes};
+use message::{Message, MessageError, PingRes};
+use std::error::Error;
 
 // TODO: remove dummy()
 pub fn dummy() {
@@ -50,14 +51,32 @@ pub fn dummy() {
         Err(e) => {
             println!("DISPLAY...");
             println!("error: {e}");
-            println!("");
+            println!();
             println!("DEBUG...");
             println!("error: {e:?}");
-            println!("");
+            println!();
 
-            match e.kind() {
-                ErrorKind::FromBytes => println!("Expected error"),
-                _ => println!("Unexpected error"),
+            match e {
+                MessageError::FromBytes { .. } => {
+                    println!("Expected error...");
+                    println!("error: {:?}", e);
+                    let mut source: Option<&(dyn Error + 'static)> = e.source();
+
+                    while let Some(s) = source {
+                        println!("source: {}, {:?}", s, s);
+                        source = s.source();
+                    }
+                }
+                e => {
+                    println!("Unexpected error...");
+                    println!("error: {:?}", e);
+                    let mut source: Option<&(dyn Error + 'static)> = e.source();
+
+                    while let Some(s) = source {
+                        println!("source: {}, {:?}", s, s);
+                        source = s.source();
+                    }
+                }
             }
         }
     }

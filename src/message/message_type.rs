@@ -1,4 +1,4 @@
-use super::error::{Error, ErrorKind};
+use super::error::MessageError;
 
 extern crate alloc;
 use alloc::vec::Vec;
@@ -30,12 +30,12 @@ impl Message {
         random()
     }
 
-    pub(crate) fn to_allocvec(&self) -> Result<Vec<u8>, Error> {
-        to_allocvec(self).map_err(|e| Error::with_source(ErrorKind::FromBytes, e))
+    pub(crate) fn to_allocvec(&self) -> Result<Vec<u8>, MessageError> {
+        to_allocvec(self).map_err(|e| MessageError::ToBytes(e.into()))
     }
 
-    pub(crate) fn from_bytes(s: &[u8]) -> Result<Self, Error> {
-        from_bytes(s).map_err(|e| Error::with_source(ErrorKind::ToBytes, e))
+    pub(crate) fn from_bytes(s: &[u8]) -> Result<Self, MessageError> {
+        from_bytes(s).map_err(|e| MessageError::FromBytes(e.into()))
     }
 }
 
