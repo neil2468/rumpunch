@@ -1,6 +1,9 @@
 // #![warn(missing_docs)]   // TODO: re-enable
 
 mod message;
+mod server;
+
+pub use server::RendezvousServer;
 
 use message::{Message, MessageError, PingRes};
 use std::error::Error;

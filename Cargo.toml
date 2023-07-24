@@ -17,6 +17,9 @@ postcard = { version = "1.0.4", features = ["alloc"] }
 rand = "0.8.5"
 serde = { version = "1.0.164", features = ["derive"] }
 thiserror = "1.0.43"
+tokio = { version = "1.29.1", features = ["rt", "net"] }
+tracing = "0.1.37"
 
-[[example]]
-name = "foo"
+[dev-dependencies]
+tokio = { version = "1.29.1", features = ["full"] }
+tracing-subscriber = "0.3.17"
