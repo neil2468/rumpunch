@@ -17,7 +17,7 @@ postcard = { version = "1.0.4", features = ["alloc"] }
 rand = "0.8.5"
 serde = { version = "1.0.164", features = ["derive"] }
 thiserror = "1.0.43"
-tokio = { version = "1.29.1", features = ["rt", "net"] }
+tokio = { version = "1.29.1", features = ["rt", "net", "time"] }
 tracing = "0.1.37"
 
 [dev-dependencies]

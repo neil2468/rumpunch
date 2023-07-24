@@ -19,7 +19,5 @@ async fn main() {
     let server = RendezvousServer::new(ports);
     server.blocking_run().await;
 
-    // tokio::time::sleep(tokio::time::Duration::from_millis(3000)).await;
-
     info!("Finished");
 }
