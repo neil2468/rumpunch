@@ -1,9 +1,8 @@
-use rumpunch::RendezvousServer;
 use tracing::{info, subscriber::set_global_default, Level};
 use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     println!("Started");
 
     // Install a subscriber for tracing
@@ -14,10 +13,8 @@ async fn main() {
 
     info!("Started");
 
-    let ports = vec![4000, 4001, 4002];
-
-    let server = RendezvousServer::new(ports);
-    server.blocking_run().await;
+    rumpunch::Test::test().await?;
 
     info!("Finished");
+    Ok(())
 }

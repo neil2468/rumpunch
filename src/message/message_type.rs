@@ -1,3 +1,5 @@
+use crate::peer_id::PeerId;
+
 use super::error::MessageError;
 
 extern crate alloc;
@@ -6,23 +8,11 @@ use postcard::{from_bytes, to_allocvec};
 use rand::prelude::random;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub(crate) enum Message {
-    PingReq(PingReq),
-    PingRes(PingRes),
-}
-
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub(crate) struct PingReq {
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct Message {
+    pub(crate) peer_id: PeerId,
     pub(crate) msg_id: u32,
-    pub(crate) from_peer_id: String,
-    pub(crate) to_peer_id: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub(crate) struct PingRes {
-    pub(crate) _dummy: bool,
-    pub(crate) msg_id: u32,
+    pub(crate) kind: Kind,
 }
 
 impl Message {
@@ -39,4 +29,13 @@ impl Message {
     }
 }
 
-// TODO: add tests
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) enum Kind {
+    Test(Test),
+    Ack,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct Test {
+    pub(crate) peer_src_port: u16,
+}
