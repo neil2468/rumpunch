@@ -1,7 +1,4 @@
-use crate::{
-    message::{Message, Test},
-    peer_id::PeerId,
-};
+use crate::{message::Message, peer_id::PeerId};
 use dashmap::DashMap;
 use std::{net::IpAddr, panic, sync::Arc, time::Instant};
 use tokio::{net::UdpSocket, task::JoinSet};
@@ -92,11 +89,12 @@ impl RendezvousServer {
             debug!("local_src_ip: {}", addr.ip());
             debug!("local_src_port: {}", addr.port());
 
+            // TODO: log Err case to tracing.
             if let Ok(message) = Message::from_bytes(&buf[..len]) {
                 debug!("message: {:?}", message);
 
                 match message.kind {
-                    crate::message::Kind::Test(Test { peer_src_port }) => {
+                    crate::message::Kind::Test { peer_src_port } => {
                         debug!("peer_src_port: {}", peer_src_port);
                     }
                     _ => warn!("Ignoring unexpected message: {:?}", message),

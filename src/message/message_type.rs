@@ -3,25 +3,32 @@ use crate::peer_id::PeerId;
 use super::error::MessageError;
 
 extern crate alloc;
-use alloc::vec::Vec;
-use postcard::{from_bytes, to_allocvec};
+use postcard::{from_bytes, to_stdvec};
 use rand::prelude::random;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Message {
-    pub(crate) peer_id: PeerId,
     pub(crate) msg_id: u32,
+    pub(crate) peer_id: PeerId,
     pub(crate) kind: Kind,
 }
 
 impl Message {
-    pub(crate) fn random_msg_id() -> u32 {
-        random()
+    pub(crate) fn new(msg_id: u32, peer_id: PeerId, kind: Kind) -> Self {
+        Self {
+            msg_id,
+            peer_id,
+            kind,
+        }
     }
 
-    pub(crate) fn to_allocvec(&self) -> Result<Vec<u8>, MessageError> {
-        to_allocvec(self).map_err(|e| MessageError::ToBytes(e.into()))
+    pub(crate) fn with_random_msg_id(peer_id: PeerId, kind: Kind) -> Self {
+        Self::new(random(), peer_id, kind)
+    }
+
+    pub(crate) fn to_bytes(&self) -> Result<Vec<u8>, MessageError> {
+        to_stdvec(self).map_err(|e| MessageError::ToBytes(e.into()))
     }
 
     pub(crate) fn from_bytes(s: &[u8]) -> Result<Self, MessageError> {
@@ -31,11 +38,6 @@ impl Message {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) enum Kind {
-    Test(Test),
+    Test { peer_src_port: u16 },
     Ack,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct Test {
-    pub(crate) peer_src_port: u16,
 }

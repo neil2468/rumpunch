@@ -14,7 +14,7 @@ categories = ["network-programming"]
 [dependencies]
 anyhow = "1.0.72"
 dashmap = "5.5.0"
-postcard = { version = "1.0.4", features = ["alloc"] }
+postcard = { version = "1.0.4", features = ["use-std"] }
 rand = "0.8.5"
 serde = { version = "1.0.164", features = ["derive"] }
 thiserror = "1.0.43"
