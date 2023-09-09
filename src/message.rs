@@ -1,8 +1,6 @@
-use crate::peer_id::PeerId;
+use crate::{message_error::MessageError, peer_id::PeerId};
 
-use super::error::MessageError;
-
-extern crate alloc;
+extern crate alloc; // TODO: is'nt this old rust?
 use postcard::{from_bytes, to_stdvec};
 use rand::prelude::random;
 use serde::{Deserialize, Serialize};
