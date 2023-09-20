@@ -1,0 +1,175 @@
+use super::state::State;
+use crate::{
+    message::{
+        Message, Payload, PayloadKind, SampleReply, SampleRequest, StartReply, StartRequest,
+    },
+    network_error::{NetworkError, NetworkErrorKind},
+    types::{MsgId, PeerId},
+};
+use anyhow::anyhow;
+use std::{net::SocketAddr, sync::Arc};
+use tokio::net::UdpSocket;
+use tracing::{debug, trace, warn};
+
+pub(crate) struct PortTask {
+    port: u16,
+    state: Arc<State>,
+    server_id: PeerId,
+    socket: UdpSocket,
+    rx_buf: [u8; 1024], // TODO: magic number
+}
+
+impl PortTask {
+    pub(crate) async fn new(
+        port: u16,
+        state: Arc<State>,
+        server_id: PeerId,
+    ) -> Result<Self, NetworkError> {
+        let socket = UdpSocket::bind(("0.0.0.0", port)).await?;
+
+        Ok(Self {
+            port,
+            state,
+            server_id,
+            socket,
+            rx_buf: [0u8; 1024],
+        })
+    }
+
+    /// Run main loop of task.
+    pub(crate) async fn main_loop(&mut self) -> ! {
+        trace!(?self.port, "PortTask running main loop");
+        loop {
+            // Wait for datagram
+            // TODO: don't allow a receive error to stop the loop
+
+            let (len, peer_addr) = match self.socket.recv_from(&mut self.rx_buf).await {
+                Ok((len, peer_addr)) => (len, peer_addr),
+                Err(e) => {
+                    debug!(?e, "Ignoring receive erorr");
+                    continue;
+                }
+            };
+
+            // TODO: Implement rate limiting
+
+            trace!(
+                "Rx on {} from {}: {:02x?}",
+                self.port,
+                peer_addr,
+                &self.rx_buf[..len]
+            );
+
+            if let Ok(message) = Message::from_bytes(&self.rx_buf[..len]) {
+                debug!(?message);
+                if let Err(e) = self.handle_message(&peer_addr, &message).await {
+                    warn!("Ignoring error {:?}", e);
+                }
+            }
+        }
+    }
+
+    async fn handle_message(
+        &mut self,
+        peer_addr: &SocketAddr,
+        message: &Message,
+    ) -> Result<(), NetworkError> {
+        match message.kind() {
+            PayloadKind::StartRequest => {
+                let payload = StartRequest::from_message(message)?;
+                debug!(?payload);
+
+                // Process request
+                let can_continue = self
+                    .state
+                    .connect_requests
+                    .process_request(message.peer_id().clone(), payload.connect_to.clone());
+
+                // Send reply
+                let payload = StartReply { can_continue };
+                self.send_reply(&peer_addr, message.msg_id(), payload).await;
+
+                Ok(())
+            }
+            PayloadKind::SampleRequest => {
+                let payload = SampleRequest::from_message(message)?;
+                debug!(?payload);
+
+                // TODO: handle properly
+
+                // Send reply
+                let payload = SampleReply {};
+                self.send_reply(&peer_addr, message.msg_id(), payload).await;
+
+                Ok(())
+            }
+
+            // TODO: implement other messages
+            _ => Err(NetworkErrorKind::Protocol(anyhow!(
+                "ignoring unexpected message {:?}",
+                message
+            ))
+            .into()),
+        }
+    }
+
+    async fn send_reply<P>(&self, peer_addr: &SocketAddr, msg_id: MsgId, payload: P)
+    where
+        P: Payload,
+    {
+        // Ignore send errors. We expect the client to retry.
+        let data = Message::new(self.server_id.clone(), msg_id, payload).to_bytes();
+        let _ = self.socket.send_to(&data, peer_addr).await;
+    }
+}
+
+//     //TODO all
+//     // match message.payload() {
+//     //     Payload::StartRequest { connect_to } => {
+//     //         let all_starts_received = state
+//     //             .connect_requests
+//     //             .process_request(message.peer_id().clone(), connect_to.clone());
+
+//     //         // TODO: lots
+
+//     //         // XXX: Send BAD reply
+//     //         Self::send_reply(&socket, &peer_addr, message.msg_id(), Payload::StopReply)
+//     //             .await;
+
+//     //         // Send reply
+//     //         // let payload = Payload::StartReply {
+//     //         //     can_continue: all_starts_received,
+//     //         // };
+//     //         // Self::send_reply(&socket, &peer_addr, message.msg_id(), payload).await;
+//     //     }
+
+//     //     Payload::StopRequest { connect_to } => {
+//     //         state
+//     //             .connect_requests
+//     //             .process_request(message.peer_id().clone(), connect_to.clone());
+
+//     //         // TODO: lots
+
+//     //         // Send reply
+//     //         Self::send_reply(&socket, &peer_addr, message.msg_id(), Payload::StopReply)
+//     //             .await;
+//     //     }
+
+//     //     // Payload::Test { peer_src_port } => {
+//     //     //     debug!(peer_src_port);
+
+//     //     //     // Store event in data
+//     //     //     let mut events = data
+//     //     //         .entry(message.peer_id().clone())
+//     //     //         .or_insert_with(PeerEvents::new);
+//     //     //     events.add_event(TestEvent {
+//     //     //         timestamp: Instant::now(),
+//     //     //         peer_addr,
+//     //     //         peer_src_port: *peer_src_port,
+//     //     //         local_addr: socket_addr,
+//     //     //     });
+
+//     //     //     // Send ack
+//     //     //     Self::send_reply(&socket, &peer_addr, message.msg_id(), Payload::Ack).await;
+//     //     // }
+//     //     _ => warn!("Ignoring unexpected message: {:?}", message),
