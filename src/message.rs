@@ -51,7 +51,7 @@ impl Message {
     ///
     /// # Panics
     ///
-    /// Will panics if serialisation fails.
+    /// Will panic if serialisation fails.
     pub(crate) fn to_bytes(&self) -> Vec<u8> {
         // If this errors it's probably a bug
         to_stdvec(self).expect("error serialising message")
