@@ -10,7 +10,6 @@ use std::{
 #[derive(Debug)]
 #[non_exhaustive]
 pub(crate) struct NetworkError {
-    // TODO: Can shorten name is users uses module ref
     kind: NetworkErrorKind,
 }
 

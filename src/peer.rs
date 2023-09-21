@@ -13,6 +13,7 @@ use tokio::{
 use tracing::{debug, trace};
 
 const ACK_TIMEOUT: Duration = Duration::from_millis(3000);
+const RX_BUF_LEN: usize = 1024;
 
 pub(crate) struct Peer {
     /// Id of this client
@@ -25,7 +26,7 @@ pub(crate) struct Peer {
     socket: UdpSocket,
 
     /// Datagram receive buffer
-    rx_buf: [u8; 1024], // TODO: magic number
+    rx_buf: [u8; RX_BUF_LEN],
 }
 
 impl<'a> Peer {
@@ -35,7 +36,7 @@ impl<'a> Peer {
             id,
             current_msg_id: random(),
             socket,
-            rx_buf: [0u8; 1024],
+            rx_buf: [0u8; RX_BUF_LEN],
         })
     }
 
