@@ -2,10 +2,14 @@ use crate::{
     network_error::{NetworkError, NetworkErrorKind},
     types::{MsgId, PeerId},
 };
-extern crate alloc; // TODO: is'nt this old rust?
 use anyhow::anyhow;
 use postcard::{from_bytes, to_stdvec};
 use serde::{Deserialize, Serialize};
+
+// TODO: define / calc a max datagram length so recv() can know size for
+// rx_buffer and discard over long datagrams. Can only do this if PeerId
+// has a max length. Also, postcard has variable length encoding and adds
+// overhead; does this compilcate things?
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Message {

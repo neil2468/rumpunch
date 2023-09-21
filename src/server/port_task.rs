@@ -43,17 +43,15 @@ impl PortTask {
         trace!(?self.port, "PortTask running main loop");
         loop {
             // Wait for datagram
-            // TODO: don't allow a receive error to stop the loop
-
             let (len, peer_addr) = match self.socket.recv_from(&mut self.rx_buf).await {
                 Ok((len, peer_addr)) => (len, peer_addr),
                 Err(e) => {
-                    debug!(?e, "Ignoring receive erorr");
+                    debug!(?e, "Ignoring receive error");
                     continue;
                 }
             };
 
-            // TODO: Implement rate limiting
+            // TODO: Implement rate limiting by source SocketAddr
 
             trace!(
                 "Rx on {} from {}: {:02x?}",
@@ -124,3 +122,5 @@ impl PortTask {
         let _ = self.socket.send_to(&data, peer_addr).await;
     }
 }
+
+// TODO: add test for rate limiting? and ignoring bad datagrams

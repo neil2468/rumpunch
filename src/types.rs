@@ -1,4 +1,3 @@
-// TODO: docs
 // TODO: should this have a max length, so UDP packet max lengths can be known?
 // UUIDs are 128 bits (16 bytes)? Public keys are sometimes XX bits?
 
