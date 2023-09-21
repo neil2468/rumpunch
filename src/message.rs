@@ -73,8 +73,8 @@ pub(crate) enum PayloadKind {
     StartReply,
     SampleRequest,
     SampleReply,
-    // StopRequest { connect_to: PeerId },
-    // StopReply,
+    StopRequest,
+    StopReply,
 }
 
 pub(crate) trait Payload: Serialize + for<'a> Deserialize<'a> {
@@ -110,6 +110,22 @@ pub(crate) struct StartReply {
 
 impl Payload for StartReply {
     const KIND: PayloadKind = PayloadKind::StartReply;
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct StopRequest {
+    pub(crate) connect_to: PeerId,
+}
+
+impl Payload for StopRequest {
+    const KIND: PayloadKind = PayloadKind::StopRequest;
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct StopReply {}
+
+impl Payload for StopReply {
+    const KIND: PayloadKind = PayloadKind::StopReply;
 }
 
 // TOOD: Also pass IP address in message, to see if NAT is rewriting packets

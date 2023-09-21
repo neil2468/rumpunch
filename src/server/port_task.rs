@@ -2,6 +2,7 @@ use super::state::State;
 use crate::{
     message::{
         Message, Payload, PayloadKind, SampleReply, SampleRequest, StartReply, StartRequest,
+        StopReply, StopRequest,
     },
     network_error::{NetworkError, NetworkErrorKind},
     types::{MsgId, PeerId},
@@ -83,10 +84,25 @@ impl PortTask {
                 let can_continue = self
                     .state
                     .connect_requests
-                    .process_request(message.peer_id().clone(), payload.connect_to.clone());
+                    .handle_start_request(message.peer_id().clone(), payload.connect_to.clone());
 
                 // Send reply
                 let payload = StartReply { can_continue };
+                self.send_reply(peer_addr, message.msg_id(), payload).await;
+
+                Ok(())
+            }
+            PayloadKind::StopRequest => {
+                let payload = StopRequest::from_message(message)?;
+                debug!(?payload);
+
+                // Process request
+                self.state
+                    .connect_requests
+                    .handle_stop_request(message.peer_id().clone(), payload.connect_to.clone());
+
+                // Send reply
+                let payload = StopReply {};
                 self.send_reply(peer_addr, message.msg_id(), payload).await;
 
                 Ok(())

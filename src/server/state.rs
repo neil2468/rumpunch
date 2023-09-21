@@ -2,10 +2,15 @@ use crate::types::PeerId;
 use dashmap::DashMap;
 use std::fmt;
 
+#[derive(Debug, PartialEq)]
+enum ConnectState {
+    StartRequested,
+    AllStartsRequested,
+}
+
 pub(crate) struct ConnectRequests {
     // key: (peer_a, peer_b)
-    // value: true if both peers have requested a connect
-    data: DashMap<(PeerId, PeerId), bool>,
+    data: DashMap<(PeerId, PeerId), ConnectState>,
 }
 
 impl fmt::Debug for ConnectRequests {
@@ -14,9 +19,9 @@ impl fmt::Debug for ConnectRequests {
 
         for val in &self.data {
             d.entry(&format!(
-                "{} <{}> {}",
+                "{} <{:?}> {}",
                 val.key().0,
-                if *val.value() { &"T" } else { &"F" },
+                *val.value(),
                 val.key().1,
             ));
         }
@@ -32,17 +37,17 @@ impl ConnectRequests {
         }
     }
 
-    /// Process aand store a request to create a connection from one peer to
-    /// another.
+    /// Record a request to start a connection from one peer to another.
     ///
-    /// Returns `true` if the both `from_peer` and `to_peer` have requested
+    /// Returns `true` if both `from_peer` and `to_peer` have requested
     /// a connection to each other.
-    pub(crate) fn process_request(&self, from_peer: PeerId, to_peer: PeerId) -> bool {
+    pub(crate) fn handle_start_request(&self, from_peer: PeerId, to_peer: PeerId) -> bool {
+        // TODO: We should only need referneces to the PeerIds , for comparison
         let key_rev = (to_peer, from_peer);
 
         // Case: the other peer has already requested a connection
         if let Some(mut val) = self.data.get_mut(&key_rev) {
-            *val.value_mut() = true;
+            *val.value_mut() = ConnectState::AllStartsRequested;
             return true;
         }
 
@@ -50,12 +55,22 @@ impl ConnectRequests {
         // is waiting on the other peer
         let key = (key_rev.1, key_rev.0);
         if let Some(val) = self.data.get(&key) {
-            return *val;
+            return *val == ConnectState::AllStartsRequested;
         }
 
         // Case: this is the first time either peer has requested a connection
-        self.data.insert(key, false);
+        self.data.insert(key, ConnectState::StartRequested);
         false
+    }
+
+    /// Record a request to stop a connection from one peer to another.
+    pub(crate) fn handle_stop_request(&self, from_peer: PeerId, to_peer: PeerId) {
+        // TODO: We should only need referneces to the PeerIds , for comparison
+        let key = (from_peer, to_peer);
+        if self.data.remove(&key).is_none() {
+            let key_rev = (key.1, key.0);
+            self.data.remove(&key_rev);
+        }
     }
 }
 

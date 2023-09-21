@@ -1,5 +1,5 @@
 use crate::{
-    message::{SampleReply, SampleRequest, StartReply, StartRequest},
+    message::{SampleReply, SampleRequest, StartReply, StartRequest, StopReply, StopRequest},
     peer::Peer,
 };
 use std::time::Duration;
@@ -28,7 +28,12 @@ impl Test {
                 connect_to: that_peer_id.into(),
             };
 
-            let rx_payload: StartReply = client.send_receive(payload, server_1_addr).await?;
+            let server_addr = match this_peer_id == "bob" {
+                true => server_2_addr,
+                false => server_1_addr,
+            };
+
+            let rx_payload: StartReply = client.send_receive(payload, server_addr).await?;
             debug!(?rx_payload, "received reply");
 
             if rx_payload.can_continue {
@@ -51,6 +56,8 @@ impl Test {
         let _: SampleReply = client.send_receive(payload.clone(), server_2_addr).await?;
         let _: SampleReply = client.send_receive(payload, server_2_addr).await?;
 
+        sleep(Duration::from_millis(3000)).await;
+
         // let payload = Payload::Test {
         //     peer_src_port: client.socket_local_addr()?.port(),
         // };
@@ -59,6 +66,12 @@ impl Test {
         // client.send_ack(payload.clone(), server_1_addr).await?;
         // client.send_ack(payload.clone(), server_2_addr).await?;
         // client.send_ack(payload, server_2_addr).await?;
+
+        let payload = StopRequest {
+            connect_to: that_peer_id.into(),
+        };
+        let rx_payload: StopReply = client.send_receive(payload, server_1_addr).await?;
+        debug!(?rx_payload, "received reply");
 
         Ok(())
     }
