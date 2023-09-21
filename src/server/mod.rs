@@ -2,11 +2,16 @@ mod port_task;
 mod state;
 
 use self::{port_task::PortTask, state::State};
-use std::{panic, sync::Arc};
+use std::{
+    net::{IpAddr, SocketAddr},
+    panic,
+    sync::Arc,
+};
 use tokio::task::JoinSet;
 use tracing::{debug, error, trace};
 
 const SERVER_ID: &str = "server";
+const SERVER_BIND_IP: &str = "0.0.0.0";
 
 pub struct RendezvousServer {
     ports: Vec<u16>,
@@ -29,8 +34,12 @@ impl RendezvousServer {
 
         set.spawn(Self::monitor_task(self.state.clone()));
 
+        let bind_ip: IpAddr = SERVER_BIND_IP.parse()?;
+        let mut bind_addr = SocketAddr::from((bind_ip, 0));
+
         for port in &self.ports {
-            let mut obj = PortTask::new(port.clone(), self.state.clone(), SERVER_ID.into()).await?;
+            bind_addr.set_port(*port);
+            let mut obj = PortTask::new(&bind_addr, self.state.clone(), SERVER_ID.into()).await?;
             set.spawn(async move { obj.main_loop().await });
         }
 

@@ -1,6 +1,6 @@
 use crate::{
-    client::Client,
     message::{SampleReply, SampleRequest, StartReply, StartRequest},
+    peer::Peer,
 };
 use std::time::Duration;
 use tokio::time::sleep;
@@ -13,10 +13,10 @@ pub struct Test {}
 
 impl Test {
     pub async fn test(this_peer_id: &str, that_peer_id: &str) -> anyhow::Result<()> {
-        let mut client = Client::new(this_peer_id.into()).await?;
+        let mut client = Peer::new(this_peer_id.into()).await?;
 
-        let server_1_addr = Client::lookup_host(SERVER_1).await?;
-        let server_2_addr = Client::lookup_host(SERVER_2).await?;
+        let server_1_addr = Peer::lookup_host(SERVER_1).await?;
+        let server_2_addr = Peer::lookup_host(SERVER_2).await?;
 
         ///////////////////////////
         // Try to start

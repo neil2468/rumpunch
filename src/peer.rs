@@ -14,8 +14,7 @@ use tracing::{debug, trace};
 
 const ACK_TIMEOUT: Duration = Duration::from_millis(3000);
 
-// TODO: rename to Peer
-pub(crate) struct Client {
+pub(crate) struct Peer {
     /// Id of this client
     id: PeerId,
 
@@ -29,7 +28,7 @@ pub(crate) struct Client {
     rx_buf: [u8; 1024], // TODO: magic number
 }
 
-impl<'a> Client {
+impl<'a> Peer {
     pub(crate) async fn new(id: PeerId) -> Result<Self, NetworkError> {
         let socket = UdpSocket::bind(("0.0.0.0", 0)).await?;
         Ok(Self {
@@ -55,14 +54,14 @@ impl<'a> Client {
     /// Send a message and receive a reply
     pub(crate) async fn send_receive<S, R>(
         &mut self,
-        tx_payload: S,
+        send_payload: S,
         addr: SocketAddr,
     ) -> Result<R, NetworkError>
     where
         S: Payload,
         R: Payload,
     {
-        let tx_msg = self.new_message(tx_payload);
+        let tx_msg = self.new_message(send_payload);
         debug!(?tx_msg, ?addr, "Sending message");
         let data = tx_msg.to_bytes();
 
@@ -70,7 +69,7 @@ impl<'a> Client {
         self.socket.send(&data).await?;
 
         // Try to receive a message within a timeout
-        let res = timeout(ACK_TIMEOUT, self.receive(tx_msg.msg_id(), R::kind())).await;
+        let res = timeout(ACK_TIMEOUT, self.receive(tx_msg.msg_id(), &R::KIND)).await;
 
         // Handle timeout errors
         let rx_msg = res.map_err(|e| NetworkErrorKind::SendReceive(e.into()))?;

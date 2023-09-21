@@ -11,28 +11,30 @@ use std::{net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;
 use tracing::{debug, trace, warn};
 
+const RX_BUF_LEN: usize = 1024;
+
 pub(crate) struct PortTask {
     port: u16,
     state: Arc<State>,
     server_id: PeerId,
     socket: UdpSocket,
-    rx_buf: [u8; 1024], // TODO: magic number
+    rx_buf: [u8; RX_BUF_LEN],
 }
 
 impl PortTask {
     pub(crate) async fn new(
-        port: u16,
+        bind_addr: &SocketAddr,
         state: Arc<State>,
         server_id: PeerId,
     ) -> Result<Self, NetworkError> {
-        let socket = UdpSocket::bind(("0.0.0.0", port)).await?;
+        let socket = UdpSocket::bind(bind_addr).await?;
 
         Ok(Self {
-            port,
+            port: socket.local_addr()?.port(), // TODO: is this needed?
             state,
             server_id,
             socket,
-            rx_buf: [0u8; 1024],
+            rx_buf: [0u8; RX_BUF_LEN],
         })
     }
 
@@ -87,7 +89,7 @@ impl PortTask {
 
                 // Send reply
                 let payload = StartReply { can_continue };
-                self.send_reply(&peer_addr, message.msg_id(), payload).await;
+                self.send_reply(peer_addr, message.msg_id(), payload).await;
 
                 Ok(())
             }
@@ -99,7 +101,7 @@ impl PortTask {
 
                 // Send reply
                 let payload = SampleReply {};
-                self.send_reply(&peer_addr, message.msg_id(), payload).await;
+                self.send_reply(peer_addr, message.msg_id(), payload).await;
 
                 Ok(())
             }

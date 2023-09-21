@@ -12,8 +12,7 @@ pub(crate) struct Message {
     /// Id of sender
     peer_id: PeerId,
 
-    /// Id of message, for matching with ack/reply
-    // TODO: rename to ChatID or DialogueId or InteractionId?
+    /// Id of message, for matching with reply
     msg_id: MsgId,
 
     /// Payload kind
@@ -31,7 +30,7 @@ impl Message {
         Self {
             peer_id,
             msg_id,
-            kind: P::kind().clone(),
+            kind: P::KIND.clone(),
             payload: payload.to_bytes(),
         }
     }
@@ -72,10 +71,7 @@ pub(crate) enum PayloadKind {
 }
 
 pub(crate) trait Payload: Serialize + for<'a> Deserialize<'a> {
-    fn kind() -> &'static PayloadKind;
-
-    // TODO: START HERE This does not need to consume self. Change to use a ref and rename
-    // to 'as_bytes' ?.
+    const KIND: PayloadKind;
 
     fn to_bytes(self) -> Vec<u8> {
         // If this errors it's probably a bug
@@ -83,7 +79,7 @@ pub(crate) trait Payload: Serialize + for<'a> Deserialize<'a> {
     }
 
     fn from_message(message: &Message) -> Result<Self, NetworkError> {
-        match message.kind() == Self::kind() {
+        match message.kind() == &Self::KIND {
             true => Ok(from_bytes(&message.payload)
                 .map_err(|e| NetworkErrorKind::Deserialize(e.into()))?),
             false => Err(NetworkErrorKind::Deserialize(anyhow!("Wrong message kind")).into()),
@@ -97,9 +93,7 @@ pub(crate) struct StartRequest {
 }
 
 impl Payload for StartRequest {
-    fn kind() -> &'static PayloadKind {
-        &PayloadKind::StartRequest
-    }
+    const KIND: PayloadKind = PayloadKind::StartRequest;
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -108,9 +102,7 @@ pub(crate) struct StartReply {
 }
 
 impl Payload for StartReply {
-    fn kind() -> &'static PayloadKind {
-        &PayloadKind::StartReply
-    }
+    const KIND: PayloadKind = PayloadKind::StartReply;
 }
 
 // TOOD: Also pass IP address in message, to see if NAT is rewriting packets
@@ -122,16 +114,12 @@ pub(crate) struct SampleRequest {
 }
 
 impl Payload for SampleRequest {
-    fn kind() -> &'static PayloadKind {
-        &PayloadKind::SampleRequest
-    }
+    const KIND: PayloadKind = PayloadKind::SampleRequest;
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct SampleReply {}
 
 impl Payload for SampleReply {
-    fn kind() -> &'static PayloadKind {
-        &PayloadKind::SampleReply
-    }
+    const KIND: PayloadKind = PayloadKind::SampleReply;
 }
