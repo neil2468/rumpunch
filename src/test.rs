@@ -1,5 +1,5 @@
 use crate::{
-    message::{SampleReply, SampleRequest, StartReply, StartRequest, StopReply, StopRequest},
+    message::{Ack, SampleRequest, StartReply, StartRequest, StopRequest},
     peer::Peer,
 };
 use std::time::Duration;
@@ -48,13 +48,20 @@ impl Test {
         // Send samples
         ///////////////////////////
 
-        let payload = SampleRequest {
-            src_port: client.local_addr()?.port(),
-        };
-        let _: SampleReply = client.send_receive(payload.clone(), server_1_addr).await?;
-        let _: SampleReply = client.send_receive(payload.clone(), server_1_addr).await?;
-        let _: SampleReply = client.send_receive(payload.clone(), server_2_addr).await?;
-        let _: SampleReply = client.send_receive(payload, server_2_addr).await?;
+        let src_port = client.local_addr()?.port();
+        for seq_number in 0..10 {
+            let payload = SampleRequest {
+                src_port,
+                seq_number,
+            };
+
+            let server_addr = match seq_number > 4 {
+                true => server_1_addr,
+                false => server_2_addr,
+            };
+
+            let _: Ack = client.send_receive(payload, server_addr).await?;
+        }
 
         sleep(Duration::from_millis(3000)).await;
 
@@ -70,7 +77,7 @@ impl Test {
         let payload = StopRequest {
             connect_to: that_peer_id.into(),
         };
-        let rx_payload: StopReply = client.send_receive(payload, server_1_addr).await?;
+        let rx_payload: Ack = client.send_receive(payload, server_1_addr).await?;
         debug!(?rx_payload, "received reply");
 
         Ok(())

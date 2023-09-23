@@ -62,6 +62,9 @@ impl<'a> Peer {
         S: Payload,
         R: Payload,
     {
+        // TODO: UDP is lossy. Should retry send if fail to receive reply.
+        // Only try upto 3 times.
+
         let tx_msg = self.new_message(send_payload);
         debug!(?tx_msg, ?addr, "Sending message");
         let data = tx_msg.to_bytes();

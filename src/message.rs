@@ -67,14 +67,15 @@ impl Message {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
+#[non_exhaustive]
 pub(crate) enum PayloadKind {
+    Ack,
     StartRequest,
     StartReply,
     SampleRequest,
     SampleReply,
     StopRequest,
-    StopReply,
 }
 
 pub(crate) trait Payload: Serialize + for<'a> Deserialize<'a> {
@@ -122,10 +123,10 @@ impl Payload for StopRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct StopReply {}
+pub(crate) struct Ack {}
 
-impl Payload for StopReply {
-    const KIND: PayloadKind = PayloadKind::StopReply;
+impl Payload for Ack {
+    const KIND: PayloadKind = PayloadKind::Ack;
 }
 
 // TOOD: Also pass IP address in message, to see if NAT is rewriting packets
@@ -134,15 +135,28 @@ impl Payload for StopReply {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct SampleRequest {
     pub(crate) src_port: u16,
+    pub(crate) seq_number: u16,
 }
 
 impl Payload for SampleRequest {
     const KIND: PayloadKind = PayloadKind::SampleRequest;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct SampleReply {}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
 
-impl Payload for SampleReply {
-    const KIND: PayloadKind = PayloadKind::SampleReply;
+    #[test]
+    fn kinds_are_unique() {
+        // Try an check that all the Payload::KIND values are unique
+        let values = vec![
+            StartRequest::KIND,
+            StartReply::KIND,
+            StopRequest::KIND,
+            SampleRequest::KIND,
+        ];
+        let set: HashSet<&PayloadKind> = HashSet::from_iter(values.iter());
+        assert_eq!(values.len(), set.len());
+    }
 }
