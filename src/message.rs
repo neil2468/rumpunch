@@ -74,7 +74,6 @@ pub(crate) enum PayloadKind {
     StartRequest,
     StartReply,
     SampleRequest,
-    SampleReply,
     StopRequest,
 }
 

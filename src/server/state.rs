@@ -71,6 +71,10 @@ impl ConnectRequests {
     }
 }
 
+struct Sample {
+    src_port: u16,
+}
+
 // TODO: Persist state on disk.
 // TODO: Expire data (for example connection requests)
 /// Store for state of server.
