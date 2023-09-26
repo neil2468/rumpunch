@@ -16,9 +16,15 @@ pub struct RendezvousServer {
 
 // TODO: Should this be built using the builder pattern?
 impl RendezvousServer {
-    pub fn new(ports: Vec<u16>) -> Self {
-        trace!("ports: {:?}", ports);
-        RendezvousServer { ports }
+    pub fn new<I>(ports: I) -> Self
+    where
+        I: IntoIterator<Item = u16>,
+    {
+        let iter = ports.into_iter();
+        let vec = Vec::from_iter(iter);
+
+        trace!("ports: {:?}", vec);
+        RendezvousServer { ports: vec }
     }
 
     // TODO: don't use anyhow::Error?

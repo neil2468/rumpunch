@@ -75,6 +75,9 @@ impl<'a> Peer {
         let res = timeout(ACK_TIMEOUT, self.receive(tx_msg.msg_id(), &R::KIND)).await;
 
         // Handle timeout errors
+        let res = res.map_err(|e| NetworkErrorKind::SendReceive(e.into()))?;
+
+        // Handle receive errors
         let rx_msg = res.map_err(|e| NetworkErrorKind::SendReceive(e.into()))?;
 
         // Deserialise payload
@@ -84,18 +87,16 @@ impl<'a> Peer {
     }
 
     /// Receives messages until an expected message is received.
-    async fn receive(&mut self, msg_id: MsgId, expect_payload: &PayloadKind) -> Message {
+    async fn receive(
+        &mut self,
+        msg_id: MsgId,
+        expect_payload: &PayloadKind,
+    ) -> Result<Message, std::io::Error> {
         let mut msg: Option<Message> = None;
 
         while msg.is_none() {
-            // Receive a datagram, log and ignore errors
-            let len = match self.socket.recv(&mut self.rx_buf).await {
-                Ok(len) => len,
-                Err(e) => {
-                    trace!(?e, "Ignoring receive error");
-                    continue;
-                }
-            };
+            // Receive a datagram and handle or log errors
+            let len = self.socket.recv(&mut self.rx_buf).await?;
 
             // Deserialise message, log and ignore errors
             let rx_msg = match Message::from_bytes(&self.rx_buf[..len]) {
@@ -123,7 +124,7 @@ impl<'a> Peer {
             msg = Some(rx_msg);
         }
 
-        msg.unwrap()
+        Ok(msg.unwrap())
     }
 
     /// DNS resolve a hostname to a SocketAddr

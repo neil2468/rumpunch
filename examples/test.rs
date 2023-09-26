@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use clap::Parser;
 use tracing::{error, info, subscriber::set_global_default, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -5,6 +7,15 @@ use tracing_subscriber::FmtSubscriber;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    /// Server IP address
+    server_ip: IpAddr,
+
+    /// Start port number
+    server_port_from: u16,
+
+    /// End port number
+    server_port_to: u16,
+
     /// Enable debug output
     #[arg(long, action = clap::ArgAction::SetTrue)]
     debug: bool,
@@ -31,7 +42,9 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Started");
 
-    if let Err(e) = rumpunch::Test::test().await {
+    if let Err(e) =
+        rumpunch::Test::test(args.server_ip, args.server_port_from, args.server_port_to).await
+    {
         error!("Error: {:?}", e);
         error!("Source: {:?}", e.source());
         error!("Backtrace: {:?}", e.backtrace());
