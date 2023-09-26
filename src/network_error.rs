@@ -56,9 +56,6 @@ pub enum NetworkErrorKind {
     /// Error deserialising from bytes
     Deserialize(anyhow::Error),
 
-    /// Protocol error
-    Protocol(anyhow::Error),
-
     /// A low-level IO error
     Io(anyhow::Error),
 }

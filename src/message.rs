@@ -1,6 +1,8 @@
+use std::net::SocketAddr;
+
 use crate::{
     network_error::{NetworkError, NetworkErrorKind},
-    types::{MsgId, PeerId},
+    types::MsgId,
 };
 use anyhow::anyhow;
 use postcard::{from_bytes, to_stdvec};
@@ -16,9 +18,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Message {
-    /// Id of sender
-    peer_id: PeerId,
-
     /// Id of message, for matching with reply
     msg_id: MsgId,
 
@@ -30,20 +29,15 @@ pub(crate) struct Message {
 }
 
 impl Message {
-    pub(crate) fn new<P>(peer_id: PeerId, msg_id: MsgId, payload: P) -> Self
+    pub(crate) fn new<P>(msg_id: MsgId, payload: P) -> Self
     where
         P: Payload,
     {
         Self {
-            peer_id,
             msg_id,
             kind: P::KIND.clone(),
             payload: payload.to_bytes(),
         }
-    }
-
-    pub(crate) fn peer_id(&self) -> &PeerId {
-        &self.peer_id
     }
 
     pub(crate) fn msg_id(&self) -> MsgId {
@@ -58,7 +52,7 @@ impl Message {
     ///
     /// # Panics
     ///
-    /// Will panic if serialisation fails.
+    /// Panics if serialisation fails.
     pub(crate) fn to_bytes(&self) -> Vec<u8> {
         // If this errors it's probably a bug
         to_stdvec(self).expect("error serialising message")
@@ -74,10 +68,8 @@ impl Message {
 #[non_exhaustive]
 pub(crate) enum PayloadKind {
     Ack,
-    StartRequest,
-    StartReply,
-    SampleRequest,
-    StopRequest,
+    ProbeRequest,
+    ProbeReply,
 }
 
 pub(crate) trait Payload: Serialize + for<'a> Deserialize<'a> {
@@ -98,51 +90,20 @@ pub(crate) trait Payload: Serialize + for<'a> Deserialize<'a> {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct StartRequest {
-    pub(crate) connect_to: PeerId,
-}
+pub(crate) struct ProbeRequest {}
 
-impl Payload for StartRequest {
-    const KIND: PayloadKind = PayloadKind::StartRequest;
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct StartReply {
-    pub(crate) connection_id: Option<u32>,
-}
-
-impl Payload for StartReply {
-    const KIND: PayloadKind = PayloadKind::StartReply;
+impl Payload for ProbeRequest {
+    const KIND: PayloadKind = PayloadKind::ProbeRequest;
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct StopRequest {
-    pub(crate) connect_to: PeerId,
+pub(crate) struct ProbeReply {
+    pub(crate) public_addr: SocketAddr,
+    // TODO: Also use XOR like STUN to see if NAT is rewriting data
 }
 
-impl Payload for StopRequest {
-    const KIND: PayloadKind = PayloadKind::StopRequest;
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct Ack {}
-
-impl Payload for Ack {
-    const KIND: PayloadKind = PayloadKind::Ack;
-}
-
-// TOOD: Also pass IP address in message, to see if NAT is rewriting packets
-// Like the STUN protocol does?
-// Include hash to see if what client sent is what we received
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct SampleRequest {
-    pub(crate) connection_id: u32,
-    pub(crate) src_port: u16,
-    pub(crate) seq_number: u16,
-}
-
-impl Payload for SampleRequest {
-    const KIND: PayloadKind = PayloadKind::SampleRequest;
+impl Payload for ProbeReply {
+    const KIND: PayloadKind = PayloadKind::ProbeReply;
 }
 
 #[cfg(test)]
@@ -152,13 +113,8 @@ mod tests {
 
     #[test]
     fn kinds_are_unique() {
-        // Try an check that all the Payload::KIND values are unique
-        let values = vec![
-            StartRequest::KIND,
-            StartReply::KIND,
-            StopRequest::KIND,
-            SampleRequest::KIND,
-        ];
+        // Try to check that all the Payload::KIND values are unique
+        let values = vec![ProbeRequest::KIND, ProbeReply::KIND];
         let set: HashSet<&PayloadKind> = HashSet::from_iter(values.iter());
         assert_eq!(values.len(), set.len());
     }

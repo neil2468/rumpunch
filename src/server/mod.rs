@@ -1,45 +1,38 @@
 mod port_task;
-mod state;
 
-use self::{port_task::PortTask, state::State};
+use self::port_task::PortTask;
 use std::{
     net::{IpAddr, SocketAddr},
     panic,
-    sync::Arc,
 };
 use tokio::task::JoinSet;
-use tracing::{debug, error, trace};
+use tracing::{error, trace};
 
-const SERVER_ID: &str = "server";
 const SERVER_BIND_IP: &str = "0.0.0.0";
 
 pub struct RendezvousServer {
     ports: Vec<u16>,
-    state: Arc<State>,
 }
 
 // TODO: Should this be built using the builder pattern?
 impl RendezvousServer {
     pub fn new(ports: Vec<u16>) -> Self {
         trace!("ports: {:?}", ports);
-        RendezvousServer {
-            ports,
-            state: Arc::new(State::new()),
-        }
+        RendezvousServer { ports }
     }
 
     // TODO: don't use anyhow::Error?
     pub async fn blocking_run(&self) -> anyhow::Result<()> {
         let mut set = JoinSet::new();
 
-        set.spawn(Self::monitor_task(self.state.clone()));
+        set.spawn(Self::monitor_task());
 
         let bind_ip: IpAddr = SERVER_BIND_IP.parse()?;
         let mut bind_addr = SocketAddr::from((bind_ip, 0));
 
         for port in &self.ports {
             bind_addr.set_port(*port);
-            let mut obj = PortTask::new(&bind_addr, self.state.clone(), SERVER_ID.into()).await?;
+            let mut obj = PortTask::new(&bind_addr).await?;
             set.spawn(async move { obj.main_loop().await });
         }
 
@@ -65,11 +58,10 @@ impl RendezvousServer {
         Ok(())
     }
 
-    async fn monitor_task(state: Arc<State>) -> anyhow::Result<()> {
+    async fn monitor_task() -> anyhow::Result<()> {
         loop {
-            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-
-            debug!(?state);
+            tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
+            error!("Implement me");
         }
     }
 }

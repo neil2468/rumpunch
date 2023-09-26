@@ -1,7 +1,7 @@
 use crate::{
     message::{Message, Payload, PayloadKind},
     network_error::{NetworkError, NetworkErrorKind},
-    types::{MsgId, PeerId},
+    types::MsgId,
 };
 use anyhow::anyhow;
 use rand::random;
@@ -16,9 +16,6 @@ const ACK_TIMEOUT: Duration = Duration::from_millis(3000);
 const RX_BUF_LEN: usize = 1024;
 
 pub(crate) struct Peer {
-    /// Id of this client
-    id: PeerId,
-
     /// For creating message ids
     current_msg_id: MsgId,
 
@@ -30,15 +27,17 @@ pub(crate) struct Peer {
 }
 
 impl<'a> Peer {
-    pub(crate) async fn new(id: PeerId) -> Result<Self, NetworkError> {
+    pub(crate) async fn new() -> Result<Self, NetworkError> {
         let socket = UdpSocket::bind(("0.0.0.0", 0)).await?;
         Ok(Self {
-            id,
             current_msg_id: random(),
             socket,
             rx_buf: [0u8; RX_BUF_LEN],
         })
     }
+
+    // TODO: implenent fn new_with_addr() to allow caller to specify local
+    // socket's address.
 
     pub(crate) fn local_addr(&self) -> Result<SocketAddr, NetworkError> {
         self.socket.local_addr().map_err(|e| e.into())
@@ -49,7 +48,7 @@ impl<'a> Peer {
         (self.current_msg_id, _) = self.current_msg_id.overflowing_add(1);
 
         // Create message
-        Message::new(self.id.clone(), self.current_msg_id, payload)
+        Message::new(self.current_msg_id, payload)
     }
 
     /// Send a message and receive a reply

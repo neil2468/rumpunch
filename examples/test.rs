@@ -5,12 +5,6 @@ use tracing_subscriber::FmtSubscriber;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// ID of this peer
-    this: String,
-
-    /// ID of peer we want to connect to
-    that: String,
-
     /// Enable debug output
     #[arg(long, action = clap::ArgAction::SetTrue)]
     debug: bool,
@@ -37,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Started");
 
-    if let Err(e) = rumpunch::Test::test(args.this.as_str(), args.that.as_str()).await {
+    if let Err(e) = rumpunch::Test::test().await {
         error!("Error: {:?}", e);
         error!("Source: {:?}", e.source());
         error!("Backtrace: {:?}", e.backtrace());
