@@ -1,6 +1,6 @@
 use crate::types::PeerId;
-use dashmap::DashMap;
-use std::fmt;
+use dashmap::{DashMap, DashSet};
+use std::{fmt, net::SocketAddr, sync::Mutex};
 
 pub(crate) struct ConnectRequests {
     // key: (peer_a, peer_b), created when peer_a requests connection to peer_b
@@ -71,8 +71,40 @@ impl ConnectRequests {
     }
 }
 
-struct Sample {
-    src_port: u16,
+#[derive(Debug)]
+pub(crate) struct Sample {
+    /// Peer that sent the sample
+    pub(crate) peer_id: PeerId,
+
+    /// What the server received as the source address of the message
+    pub(crate) peer_addr: SocketAddr,
+
+    /// Connection ID this sample relates to
+    pub(crate) connection_id: u32,
+
+    /// The local port number the peer used to send the message
+    pub(crate) src_port: u16,
+
+    /// Message sequence number
+    pub(crate) seq_number: u16,
+}
+
+#[derive(Debug)]
+pub(crate) struct Samples {
+    data: Mutex<Vec<Sample>>,
+}
+
+impl Samples {
+    pub(crate) fn new() -> Self {
+        Self {
+            data: Mutex::new(Vec::new()),
+        }
+    }
+
+    pub(crate) fn insert_sample(&self, sample: Sample) {
+        let mut data = self.data.lock().expect("Error with mutex for samples");
+        data.push(sample);
+    }
 }
 
 // TODO: Persist state on disk.
@@ -81,12 +113,16 @@ struct Sample {
 #[derive(Debug)]
 pub(crate) struct State {
     pub(crate) connect_requests: ConnectRequests,
+    pub(crate) connect_ids: DashSet<u32>,
+    pub(crate) samples: Samples,
 }
 
 impl State {
     pub(crate) fn new() -> Self {
         Self {
             connect_requests: ConnectRequests::new(),
+            connect_ids: DashSet::new(),
+            samples: Samples::new(),
         }
     }
 }

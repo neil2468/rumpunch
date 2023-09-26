@@ -23,6 +23,8 @@ impl Test {
         ///////////////////////////
 
         // TODO: this should timeout
+
+        let mut connection_id = None;
         loop {
             let payload = StartRequest {
                 connect_to: that_peer_id.into(),
@@ -36,7 +38,8 @@ impl Test {
             let rx_payload: StartReply = client.send_receive(payload, server_addr).await?;
             debug!(?rx_payload, "received reply");
 
-            if rx_payload.can_continue {
+            connection_id = rx_payload.connection_id;
+            if connection_id.is_some() {
                 break;
             }
 
@@ -47,10 +50,12 @@ impl Test {
         ///////////////////////////
         // Send samples
         ///////////////////////////
+        let connection_id = connection_id.unwrap();
 
         let src_port = client.local_addr()?.port();
         for seq_number in 0..10 {
             let payload = SampleRequest {
+                connection_id,
                 src_port,
                 seq_number,
             };

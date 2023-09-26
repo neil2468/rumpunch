@@ -11,6 +11,9 @@ use serde::{Deserialize, Serialize};
 // has a max length. Also, postcard has variable length encoding and adds
 // overhead; does this compilcate things?
 
+// TODO: Make these messages serialise compatible with other languages &
+// platforms.
+
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Message {
     /// Id of sender
@@ -105,7 +108,7 @@ impl Payload for StartRequest {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct StartReply {
-    pub(crate) can_continue: bool,
+    pub(crate) connection_id: Option<u32>,
 }
 
 impl Payload for StartReply {
@@ -133,6 +136,7 @@ impl Payload for Ack {
 // Include hash to see if what client sent is what we received
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct SampleRequest {
+    pub(crate) connection_id: u32,
     pub(crate) src_port: u16,
     pub(crate) seq_number: u16,
 }

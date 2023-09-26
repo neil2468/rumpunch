@@ -4,9 +4,11 @@ use crate::{
         Ack, Message, Payload, PayloadKind, SampleRequest, StartReply, StartRequest, StopRequest,
     },
     network_error::{NetworkError, NetworkErrorKind},
+    server::state::Sample,
     types::{MsgId, PeerId},
 };
 use anyhow::anyhow;
+use rand::random;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;
 use tracing::{debug, trace, warn};
@@ -85,8 +87,17 @@ impl PortTask {
                     .connect_requests
                     .handle_start_request(message.peer_id(), &payload.connect_to);
 
+                // TODO: START HERE. This is wrong. Connection ID should only be
+                // crated once per peer pair.
+
+                // If needed, allocate a connection_id
+                let connection_id = match can_continue {
+                    true => Some(self.new_connection_id()),
+                    false => None,
+                };
+
                 // Send reply
-                let payload = StartReply { can_continue };
+                let payload = StartReply { connection_id };
                 self.send_reply(peer_addr, message.msg_id(), payload).await;
 
                 Ok(())
@@ -112,6 +123,16 @@ impl PortTask {
                 // TODO: handle properly
                 // TODO: START HERE store samples in state
 
+                let sample = Sample {
+                    peer_id: message.peer_id().clone(),
+                    peer_addr: peer_addr.clone(),
+                    connection_id: payload.connection_id,
+                    src_port: payload.src_port,
+                    seq_number: payload.seq_number,
+                };
+
+                self.state.samples.insert_sample(sample);
+
                 // Send reply
                 self.send_reply(peer_addr, message.msg_id(), Ack {}).await;
 
@@ -134,6 +155,25 @@ impl PortTask {
         // Ignore send errors. We expect the client to retry.
         let data = Message::new(self.server_id.clone(), msg_id, payload).to_bytes();
         let _ = self.socket.send_to(&data, peer_addr).await;
+    }
+
+    ///
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if it fails to find an unused, random
+    /// connection_id withih a reasonable number of tries.
+    fn new_connection_id(&mut self) -> u32 {
+        const MAX_TRIES: usize = 100;
+
+        for _ in 0..MAX_TRIES {
+            let id = random();
+            if self.state.connect_ids.insert(id) {
+                return id;
+            }
+        }
+
+        panic!("Failed to create a new, random connection id");
     }
 }
 
