@@ -1,0 +1,12 @@
+[package]
+name = "rumpunch"
+version = "0.0.2"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+readme = "README.md"
+description = "This crate name is available. Contact me (neil2468 at gmail.com) if you want it."
+repository = "https://github.com/neil2468/rumpunch.git"
+keywords = ["available"]
+
+[dependencies]
